@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const { GoogleAuth } = require("google-auth-library");
+const fetch = require("node-fetch"); // Make sure to install node-fetch
 
 const app = express();
 app.use(bodyParser.json());
@@ -39,8 +40,15 @@ app.post("/send", async (req, res) => {
       }
     );
 
-    const data = await response.json();
-    res.json(data);
+    const text = await response.text(); // read raw response first
+
+    try {
+      const data = JSON.parse(text); // try to parse JSON
+      res.json(data);
+    } catch (parseErr) {
+      console.error("❌ Failed to parse JSON. Response text:", text);
+      res.status(response.status).json({ error: "Invalid response from FCM", details: text });
+    }
   } catch (err) {
     console.error("❌ Notification error:", err);
     res.status(500).json({ error: "Error sending notification" });
